@@ -24,16 +24,16 @@ public class CountryAgent extends Agent {
                 Integer occurrencies = countryOccurrences.get(name);
                 countryOccurrences.put(name, (occurrencies == null ? 0 : occurrencies) + 1);
                 for (String tag : tags) {
-                    sendMessage(tag, "hhhhhh"); // wyslij do kazdego z zainteresowanych agentow
-                    sendMessage("history", "historia 1111");
+                    sendMessage(tag, countryOccurrences); // wyslij do kazdego z zainteresowanych agentow
+                    sendMessage("history", countryOccurrences);
 //                    sendMessage("history", countryOccurrences.toString());
                 }
             }
         }
 
-        void sendMessage(String receiver, String content) {
+        void sendMessage(String receiver, Map<String, Integer> content) {
             ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.setContent(content);
+            msg.setContent(content.toString());
             msg.addReceiver(new AID(receiver, AID.ISLOCALNAME));
             send(msg);
         }
