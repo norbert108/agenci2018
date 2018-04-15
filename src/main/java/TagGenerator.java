@@ -1,6 +1,6 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+
+import static java.lang.Math.abs;
 
 public class TagGenerator {
 
@@ -10,16 +10,16 @@ public class TagGenerator {
         countries = new ArrayList<String>();
         countries.add("pol");
         countries.add("rus");
-//        countries.add("UK");
-//        countries.add("USA");
+        countries.add("uk");
+        countries.add("usa");
     }
 
-    public ArrayList<String> getTags(int count) {
-        ArrayList<String> tags = new ArrayList<String>();
+    public Set<String> getTags(int count) {
+        Set<String> tags = new HashSet<String>();
         Random rand = new Random();
         for(int i = 0; i < count; i++) {
-            int index = rand.nextInt() % countries.size();
-            tags.add(countries.get(index-1));
+            int index = abs(rand.nextInt()) % countries.size();
+            tags.add(countries.get(index));
         }
         return tags;
     }

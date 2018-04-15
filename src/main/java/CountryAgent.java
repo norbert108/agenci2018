@@ -1,67 +1,60 @@
-//   HelloAgent:    our first JADE program
-//
-//   Usage:    % javac HelloAgent.java
-//             % java jade.Boot fred:HelloAgent
-// --------------------------------------------------------
-
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.SimpleBehaviour;
 import jade.lang.acl.ACLMessage;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-public class CountryAgent extends Agent
-{
+public class CountryAgent extends Agent {
     private String name;
-    private int articles;
+    private Map<String, Integer> countryOccurrences;
 
-    public CountryAgent() {
+    private CyclicBehaviour analyzeNews = new CyclicBehaviour() {
+        @Override
+        public void action() {
+//            String name = getLocalName();
+            // symuluje analize pojedynczego artykolu
+            TagGenerator tagGenerator = new TagGenerator();
+            Set<String> tags = tagGenerator.getTags(10);
+            if (tags.contains(name)) {
+                tags.remove(name); // usun polske
+
+                Integer occurrencies = countryOccurrences.get(name);
+                countryOccurrences.put(name, (occurrencies == null ? 0 : occurrencies) + 1);
+                for (String tag : tags) {
+                    sendMessage(tag, "hhhhhh"); // wyslij do kazdego z zainteresowanych agentow
+                    sendMessage("history", "historia 1111");
+//                    sendMessage("history", countryOccurrences.toString());
+                }
+            }
+        }
+
+        void sendMessage(String receiver, String content) {
+            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+            msg.setContent(content);
+            msg.addReceiver(new AID(receiver, AID.ISLOCALNAME));
+            send(msg);
+        }
+    };
+
+    private CyclicBehaviour receiveMessages = new CyclicBehaviour() {
+        @Override
+        public void action() {
+            ACLMessage msg = receive();
+            if (msg != null) {
+                System.out.println(" - " + myAgent.getLocalName() + " from " + msg.getSender() + " <- " + msg.getContent());
+            }
+            block();
+        }
+    };
+
+    protected void setup() {
         this.name = getLocalName();
-    }
+        this.countryOccurrences = new HashMap<String, Integer>();
 
-    protected void setup()
-    {
-        addBehaviour(new SimpleBehaviour() {
-            private CountryAgent helloAgent = (CountryAgent)myAgent;
-
-            @Override
-            public void action() {
-                TagGenerator tagGenerator = new TagGenerator();
-                ArrayList<String> tags = tagGenerator.getTags(10);
-                if(tags.contains(name)) {
-                    tags.remove(name);
-                    helloAgent.articles++;
-                    for(String tag: tags) {
-                        sendMessage(tag, "Ty chuju!");
-                    }
-                }
-            }
-
-            @Override
-            public boolean done() {
-                return false;
-            }
-
-            public void sendMessage(String receiver, String content) {
-                ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                msg.setContent(content);
-                msg.addReceiver(new AID(receiver, AID.ISLOCALNAME));
-                send(msg);
-            }
-        });
-
-        addBehaviour(
-                new CyclicBehaviour(this) {
-                    public void action() {
-                        ACLMessage msg = receive();
-                        if (msg!=null) {
-                            System.out.println(" - " + myAgent.getLocalName() + " <- " + msg.getContent());
-                        }
-                        block();
-                    }
-                }
-        );
+        addBehaviour(analyzeNews);
+        addBehaviour(receiveMessages);
     }
 }
