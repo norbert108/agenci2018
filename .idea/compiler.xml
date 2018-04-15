@@ -9,5 +9,8 @@
         <module name="agenci" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="agenci" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>
