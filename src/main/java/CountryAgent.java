@@ -1,41 +1,40 @@
-import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 
 public class CountryAgent extends Agent {
     private String name;
-    private Map<String, Integer> countryOccurrences;
+    private Map<String, Integer> messageCounters = new HashMap<>();
+    private List<HistoryRecord> history = new ArrayList<>();
+    private TagGenerator tagGenerator = new TagGenerator();
 
-    private CyclicBehaviour analyzeNews = new CyclicBehaviour() {
+    private TickerBehaviour analyzeNews = new TickerBehaviour(this, 2000) {
         @Override
-        public void action() {
-//            String name = getLocalName();
-            // symuluje analize pojedynczego artykolu
-            TagGenerator tagGenerator = new TagGenerator();
-            Set<String> tags = tagGenerator.getTags(10);
-            if (tags.contains(name)) {
-                tags.remove(name); // usun polske
+        public void onTick() {
+            // symuluje analize pojedynczego artykułu
+            Set<String> tags = tagGenerator.getTags();
 
-                Integer occurrencies = countryOccurrences.get(name);
-                countryOccurrences.put(name, (occurrencies == null ? 0 : occurrencies) + 1);
-                for (String tag : tags) {
-                    sendMessage(tag, countryOccurrences); // wyslij do kazdego z zainteresowanych agentow
-                    sendMessage("history", countryOccurrences);
-//                    sendMessage("history", countryOccurrences.toString());
-                }
+            System.out.println("[" + name + "] read tags: " + tags.toString());
+
+            Map<String, Integer> resultOccurrencies = new HashMap<>();
+            for (String tag: tags) {
+                Integer occurrencies = resultOccurrencies.get(tag);
+                resultOccurrencies.put(tag, (occurrencies == null ? 0 : occurrencies) + 1);
             }
-        }
 
-        void sendMessage(String receiver, Map<String, Integer> content) {
-            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-            msg.setContent(content.toString());
-            msg.addReceiver(new AID(receiver, AID.ISLOCALNAME));
-            send(msg);
+            // notify interested agents
+            String messageContent = Utils.dateToString(new Date()) + "@" + resultOccurrencies.toString();
+            for(String tag: tags) {
+                if(tag.equals(name)) continue;
+                if(Utils.createAgentIfNotExist(tag, myAgent)) {
+                    send(Utils.prepareMsg("decision", "register_agent", tag));
+                }
+                send(Utils.prepareMsg(tag, "update", messageContent));
+            }
         }
     };
 
@@ -44,15 +43,68 @@ public class CountryAgent extends Agent {
         public void action() {
             ACLMessage msg = receive();
             if (msg != null) {
-                System.out.println(" - " + myAgent.getLocalName() + " from " + msg.getSender() + " <- " + msg.getContent());
+                String senderName = msg.getSender().getLocalName();
+                String messageType = msg.getProtocol();
+                String messageContent = msg.getContent();
+                String[] contentStringArray = messageContent.split("@");
+                printDebugInfo(senderName, messageContent);
+
+                if(messageType.equals("update")) {
+                    Date creationDate = Utils.stringToDate(contentStringArray[0]);
+                    String contentString = contentStringArray[1];
+
+                    // zdekoduj wiadomość
+                    Map<String, Integer> contentMap = Utils.stringToMap(contentString);
+                    history.add(new HistoryRecord(creationDate, senderName, contentMap));
+
+                    // todo trzeba sortować dane po update!
+                } else if(messageType.equals("query")) {
+                    long queryId = Long.valueOf(contentStringArray[0]);
+                    Date startDate = Utils.stringToDate(contentStringArray[1]);
+                    Date endDate = Utils.stringToDate(contentStringArray[2]);
+
+                    // find index range
+                    Integer startIndex = 0;
+                    Integer endIndex = history.size() - 1;
+                    for(int i = 0; i < history.size(); i++) {
+                        if(history.get(i).getCreationDate().after(startDate)) {
+                            startIndex = i;
+                            break;
+                        }
+                    }
+                    for(int i = history.size() - 1; i >= 0; i--) {
+                        if(history.get(i).getCreationDate().before(endDate)) {
+                            endIndex = i;
+                            break;
+                        }
+                    }
+
+                    // parse data
+                    System.out.println("query from " + senderName + ":  " + startDate.toString() + "  " + endDate.toString());
+                    Map<String, Integer> summary = new HashMap<>();
+                    for(int i = startIndex; i <= endIndex; i++) {
+                        Map<String, Integer> occurrenciesEntry = history.get(i).getOccurencies();
+                        for(String countryName: occurrenciesEntry.keySet()) {
+                            Integer occurrencies = summary.get(countryName);
+                            summary.put(countryName, (occurrencies == null ? 0 : occurrencies) + occurrenciesEntry.get(countryName));
+                        }
+                    }
+                    String replyMsg = queryId + "@" + summary.toString();
+                    send(Utils.prepareMsg(senderName, "query_reply", replyMsg));
+                }
             }
             block();
+        }
+
+        private void printDebugInfo(String senderName, String content) {
+            Integer messageCounter = messageCounters.get(senderName);
+            messageCounters.put(senderName, (messageCounter == null ? 0 : messageCounter) + 1);
+            System.out.println(messageCounters.get(senderName) + " - [" + name + "]: from " + senderName + " <- " + content);
         }
     };
 
     protected void setup() {
         this.name = getLocalName();
-        this.countryOccurrences = new HashMap<String, Integer>();
 
         addBehaviour(analyzeNews);
         addBehaviour(receiveMessages);
