@@ -55,4 +55,13 @@ Adresem, na który wysyłane są wiadomości jest **localName** agenta.
     Informuje DecisionAgenta o powstaniu nowego agenta i prosi o subskrybcję.
     **content** ``polska``
     Nazwa rejestrowanego agenta.
-    
+* **notification** - sender: DecisionAgent, receiver: NotifierAgent
+    Uruchamia notyfikację do logów i na email
+    **content** ``cokolwiek o czym ma być notyfikacja``
+
+## Email sender
+Wysyłanie emaili odbywa się za pomocą SMTP Google'a.
+Przy uruchamianiu aplikacji należy podać następujące zmienne środowiskowe:
+* GMAIL_USER - nazwa użytkownika gmaila
+* GMAIL_PASSWORD - hasło
+* NOTIFICATION_EMAIL_RECIPIENT - odbiorca notyfikacji
