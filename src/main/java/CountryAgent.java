@@ -2,6 +2,7 @@ import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
+import parser.CsvParser;
 
 import java.util.*;
 
@@ -11,12 +12,18 @@ public class CountryAgent extends Agent {
     private Map<String, Integer> messageCounters = new HashMap<>();
     private List<HistoryRecord> history = new ArrayList<>();
     private TagGenerator tagGenerator = new TagGenerator();
+    private CsvParser csvParser = new CsvParser();
 
     private TickerBehaviour analyzeNews = new TickerBehaviour(this, 2000) {
         @Override
         public void onTick() {
             // symuluje analize pojedynczego artykułu
-            Set<String> tags = tagGenerator.getTags();
+            //Set<String> tags = tagGenerator.getTags();
+
+            Set<String> tags = csvParser.getTagsFromRandomArticle();
+
+
+
 
             System.out.println("[" + name + "] read tags: " + tags.toString());
 
