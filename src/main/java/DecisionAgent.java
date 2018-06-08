@@ -32,7 +32,10 @@ public class DecisionAgent extends Agent {
                 String messageContent = msg.getContent();
 
                 if (messageType.equals("query_reply")) {
-                    System.out.println("query_reply: " + messageContent);
+                    System.out.println("!!! query_reply: " + messageContent);
+                    System.out.println("!!! sendername: " + senderName);
+
+
 
                     // todo tutaj analiza danych i decyzje różne
                     // todo tworzenie agentów obsługujących wiele krajów należy do tego agenta
