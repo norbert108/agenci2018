@@ -1,7 +1,9 @@
 package utils;
 
+import java.util.List;
+
 public class StandardDeviation {
-    public static double calculateSD(int numArray[]) {
+    public static double calculateSD(List<Integer> numArray) {
         double sum = 0.0, standardDeviation = 0.0;
 
         for(double num : numArray) { sum += num; }
