@@ -54,7 +54,7 @@ public class DecisionAgent extends Agent {
 
     private void saveAndAnalyze(String senderName, String messageContent) {
         Map<String, Integer> parsedContent = Utils.stringToMap(messageContent);
-        CountryAgentDecisionData existingData = null;
+        CountryAgentDecisionData existingData;
 
         if (countryAgentDecisionDataMap.containsKey(senderName)) {
             existingData = countryAgentDecisionDataMap.get(senderName);
@@ -76,6 +76,43 @@ public class DecisionAgent extends Agent {
     }
 
     private void analyze(CountryAgentDecisionData existingData) {
+        analyzeConnections(existingData);
+        analyzeMessagesCounts(existingData);
+    }
+
+    private void analyzeMessagesCounts(CountryAgentDecisionData existingData) {
+        ArrayList<Integer> messagesInCountryList = new ArrayList<>();
+
+        for (Map.Entry<String, CountryAgentDecisionData> entry : countryAgentDecisionDataMap.entrySet()) {
+            int countryTotalCount = 0;
+            for (Map.Entry<String, Integer> countriesCountEntry : entry.getValue().getCountriesCount().entrySet()) {
+                countryTotalCount =+ countriesCountEntry.getValue();
+            }
+            messagesInCountryList.add(countryTotalCount);
+        }
+
+        double stdev = StandardDeviation.calculateSD(messagesInCountryList);
+        double average = Average.calculateAverage(messagesInCountryList);
+        LOGGER.info("MESSAGESANALYZER " + existingData.getCountry() + " messages count, stdev: " + stdev + " avg: " + average);
+
+        int currentCountryCount = 0;
+        for (Map.Entry<String, Integer> entry : existingData.getCountriesCount().entrySet()) {
+            currentCountryCount += entry.getValue();
+        }
+
+        String messageToNotify = null;
+        if (currentCountryCount > average + stdev) {
+            messageToNotify = existingData.getCountry() + " agent has many messages (" + currentCountryCount + ")!";
+        } else if (currentCountryCount < average - stdev) {
+            messageToNotify = existingData.getCountry() + " agent has low messages (" + currentCountryCount + ")!";
+        }
+
+        if (messageToNotify != null) {
+            this.sendNotification(messageToNotify);
+        }
+    }
+
+    private void analyzeConnections(CountryAgentDecisionData existingData) {
         for (Map.Entry<String, Integer> entry : existingData.getCountriesCount().entrySet()) {
             String country = entry.getKey();
             ArrayList<Integer> countryCountList = new ArrayList<>();
