@@ -132,9 +132,9 @@ public class DecisionAgent extends Agent {
             String messageToNotify = null;
 
             if (checkedDataCountryCount > average + stdev) {
-                messageToNotify = existingData.getCountry() + " agent notifies about many connections to " + country;
+                messageToNotify = existingData.getCountry() + " agent notifies about many connections (" + checkedDataCountryCount + ") to " + country;
             } else if (checkedDataCountryCount < average - stdev) {
-                messageToNotify = existingData.getCountry() + " agent notifies about low number of connections to " + country;
+                messageToNotify = existingData.getCountry() + " agent notifies about low number of connections (" + checkedDataCountryCount + ") to " + country;
             }
 
             if (messageToNotify != null) {
